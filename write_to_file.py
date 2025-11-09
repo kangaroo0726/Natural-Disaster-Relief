@@ -13,10 +13,10 @@ def read_csv_to_dict(filename):
             shelter_lon = float(line[4])
             shelter_capacity = int(line[5])
             shelter_occupancy = int(line[6])
-            food_available = True if line[6] == "True" else False
-            water_available = True if line[7] == "True" else False
-            medical_aid_available = True if line[8] == "True" else False
-            pet_friendly = True if line[9] == "True" else False
+            food_available = True if line[7] == "True" else False
+            water_available = True if line[8] == "True" else False
+            medical_aid_available = True if line[9] == "True" else False
+            pet_friendly = True if line[10] == "True" else False
             if "pet_friendly" not in shelter_dict:
                 shelter_dict["pet_friendly"] = []
             if "medical" not in shelter_dict:
