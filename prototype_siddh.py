@@ -3,6 +3,7 @@ import pandas as pd
 import folium
 import write_to_file
 from streamlit_folium import st_folium
+from folium import IFrame
 
 # --- Page config ---
 st.set_page_config(
@@ -32,10 +33,10 @@ def load_data():
                 "pet_friendly": (category == "pet_friendly")
             })
 
-    return pd.DataFrame(rows)
-
-
-
+    df = pd.DataFrame(rows)
+    df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
+    return df
+ 
 df = load_data()
 
 # --- Header ---
@@ -70,6 +71,7 @@ with col1:
             [
                 "name",
                 "address",
+                "remaining_capacity",
                 "food",
                 "water",
             ]
@@ -91,19 +93,24 @@ with col2:
 
     # Add markers
     for _, row in filtered_df.iterrows():
+        html_content = f"""
+        <div style="width: 250px; font-family: Arial; line-height: 1.4; padding: 5px;">
+            <b>{row['name']}</b><br>
+            Address: {row['address']}<br>
+            Remaining Capacity: {row['remaining_capacity']}<br>
+            Food: {'Yes' if row['food'] else 'No'}<br>
+            Water: {'Yes' if row['water'] else 'No'}<br>
+            Medical: {'Yes' if row['medical'] else 'No'}<br>
+            Pet Friendly: {'Yes' if row['pet_friendly'] else 'No'}
+        </div>
+        """
+        iframe = IFrame(html=html_content, width=270, height=180)
+        popup = folium.Popup(iframe, max_width=300)
+
         folium.Marker(
             location=[row["lat"], row["lon"]],
             tooltip=row["name"],
-            popup=(
-                f"<b>{row['name']}</b><br>"
-                f"Address: {row['address']}<br>"
-                f"Type: {row['type']}<br>"
-                f"Capacity: {row['capacity']}<br>"
-                f"Food: {'Yes' if row['food'] else 'No'}<br>"
-                f"Water: {'Yes' if row['water'] else 'No'}<br>"
-                f"Medical: {'Yes' if row['medical'] else 'No'}<br>"
-                f"Pet Friendly: {'Yes' if row['pet_friendly'] else 'No'}"
-            ),
+            popup=popup,
         ).add_to(m)
 
     # Render map
@@ -111,4 +118,4 @@ with col2:
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Data Source: Local Shelter Dataset")
+st.caption("Data Source: Local Shelter Dataset") 
