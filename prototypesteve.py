@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
-import folium
-from streamlit_folium import st_folium
+import pydeck as pdk
 
 # --- Page config ---
 st.set_page_config(
@@ -13,7 +12,7 @@ st.set_page_config(
 # --- Load CSV data ---
 @st.cache_data
 def load_data():
-    return pd.read_json("shelterData.csv")
+    return pd.read_json("shelterData.csv")  # make sure this is a proper CSV
 
 df = load_data()
 
@@ -35,57 +34,83 @@ if pet_filter:
 if medical_filter:
     filtered_df = filtered_df[filtered_df["medical"]]
 
+# --- Color markers by type ---
+type_colors = {
+    "General Shelter": [0, 100, 255, 180],   # blue
+    "Special Needs": [255, 0, 0, 180],       # red
+    "Pet Friendly": [0, 200, 0, 180],        # green
+}
+
+# Add a 'color' column to filtered_df
+filtered_df["color"] = filtered_df["type"].map(type_colors)
+
 # --- Main section ---
 col1, col2 = st.columns([2, 3])
 
-# Column 1: Shelter list
 with col1:
-    st.subheader("📋 Shelter List")
-    st.dataframe(
-        filtered_df[
-            [
-                "name",
-                "address",
-                "type",
-                "capacity",
-                "current_occupancy",
-                "food",
-                "water",
-                "medical",
-                "pet_friendly",
-            ]
-        ],
-        use_container_width=True,
-        hide_index=True,
+    # Shelter list in an expander
+    with st.expander("📋 Shelter List", expanded=True):
+        st.dataframe(
+            filtered_df[[
+                "name", "address", "type", "capacity", "current_occupancy",
+                "food", "water", "medical", "pet_friendly"
+            ]],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # Dropdown to select a shelter for details
+    selected_shelter = st.selectbox(
+        "Select a Shelter to See Details",
+        filtered_df["name"]
     )
 
-# Column 2: Map
+    if selected_shelter:
+        shelter_info = filtered_df[filtered_df["name"] == selected_shelter].iloc[0]
+        st.markdown("### 🏠 Shelter Details")
+        st.write({
+            "Name": shelter_info["name"],
+            "Address": shelter_info["address"],
+            "Type": shelter_info["type"],
+            "Capacity": shelter_info["capacity"],
+            "Current Occupancy": shelter_info["current_occupancy"],
+            "Food Available": shelter_info["food"],
+            "Water Available": shelter_info["water"],
+            "Medical Facilities": shelter_info["medical"],
+            "Pet Friendly": shelter_info["pet_friendly"]
+        })
+
 with col2:
     st.subheader("🗺️ Shelter Locations")
 
-    # Center the map
     midpoint = (filtered_df["lat"].mean(), filtered_df["lon"].mean())
-    m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    # Add markers
-    for _, row in filtered_df.iterrows():
-        folium.Marker(
-            location=[row["lat"], row["lon"]],
-            tooltip=row["name"],
-            popup=(
-                f"<b>{row['name']}</b><br>"
-                f"Address: {row['address']}<br>"
-                f"Type: {row['type']}<br>"
-                f"Capacity: {row['capacity']}<br>"
-                f"Food: {'Yes' if row['food'] else 'No'}<br>"
-                f"Water: {'Yes' if row['water'] else 'No'}<br>"
-                f"Medical: {'Yes' if row['medical'] else 'No'}<br>"
-                f"Pet Friendly: {'Yes' if row['pet_friendly'] else 'No'}"
+    st.pydeck_chart(
+        pdk.Deck(
+            map_provider="openstreetmap",
+            map_style=None,
+            initial_view_state=pdk.ViewState(
+                latitude=midpoint[0],
+                longitude=midpoint[1],
+                zoom=10,
+                pitch=0,
             ),
-        ).add_to(m)
-
-    # Render map
-    st_folium(m, width=700, height=500)
+            layers=[
+                pdk.Layer(
+                    "ScatterplotLayer",
+                    data=filtered_df,
+                    get_position=["lon", "lat"],
+                    get_color="color",
+                    get_radius=150,
+                    pickable=True,
+                ),
+            ],
+            tooltip={
+                "html": "<b>{name}</b><br/>{address}<br/>Type: {type}<br/>Capacity: {capacity}",
+                "style": {"color": "white"}
+            }
+        )
+    )
 
 # --- Summary stats ---
 st.markdown("### 📊 Summary Statistics")
