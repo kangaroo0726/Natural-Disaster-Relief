@@ -51,10 +51,10 @@ with col1:
     st.dataframe(
         filtered_df[
             [
-                "name",
-                "address",
-                "food",
-                "water",
+                "Name",
+                "Address",
+                "Food",
+                "Water",
             ]
         ],
         use_container_width=True,
