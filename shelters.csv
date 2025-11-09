@@ -1,24 +1,24 @@
 name,type,address,lat,lon,capacity,current_occupancy,food,water,medical,pet_friendly,remaining_capacity
-Gibbs High,"850 34th St S, St. Petersburg",Pet Friendly,27.7609,-82.6772,200,45,True,True,True,True,155
-Largo High,"410 Missouri Ave, Largo",Pet Friendly,27.9163,-82.7888,220,0,True,True,False,True,220
-Palm Harbor University High,"1900 Omaha St, Palm Harbor",Pet Friendly,28.0717,-82.7446,250,0,True,True,False,True,250
-Dunedin Middle,"70 Patricia Ave, Dunedin",Special Needs,28.0206,-82.7801,100,0,True,True,True,False,100
-John Hopkins Middle,"701 16th St S, St. Petersburg",Special Needs,27.7621,-82.6541,150,0,True,True,True,False,150
-Lealman Exchange,"5175 45th St N, St. Petersburg",Special Needs,27.8231,-82.6936,100,0,False,False,True,False,100
-Palm Harbor University High - Building 19,"1900 Omaha St, Palm Harbor",Special Needs,28.0718,-82.7446,100,0,True,True,True,False,100
-Belleair Elementary,"1156 Lakeview Rd, Clearwater",General Shelter,27.9413,-82.7874,150,0,True,True,False,False,150
-Carwise Middle,"3301 Bently Dr, Palm Harbor",General Shelter,28.0818,-82.7272,200,0,True,True,False,False,200
-Clearwater Fundamental Middle,"1660 Palmetto St, Clearwater",General Shelter,27.9695,-82.7695,180,0,True,True,False,False,180
-Clearwater High,"1951 Gulf to Bay Blvd, Clearwater",General Shelter,27.9603,-82.7528,250,0,True,True,False,False,250
-Dunedin Elementary,"900 Union St, Dunedin",General Shelter,28.0185,-82.7766,130,0,True,True,False,False,130
-Fairmount Park Elementary,"575 41st St S, St. Petersburg",General Shelter,27.7493,-82.6865,120,0,True,True,False,False,120
-Jamerson Elementary,"1200 37th St S, St. Petersburg",General Shelter,27.7531,-82.6821,110,0,True,True,False,False,110
-McMullen-Booth Elementary,"3025 Union St, Clearwater",General Shelter,27.9994,-82.7164,130,0,True,True,False,False,130
-Melrose Elementary,"1752 13th Ave S, St. Petersburg",General Shelter,27.7568,-82.6535,100,0,True,True,False,False,100
-Mildred Helms Elementary,"561 Clearwater Largo Rd S, Largo",General Shelter,27.9175,-82.7833,120,0,True,True,False,False,120
-New Heights Elementary,"3901 37th St N, St. Petersburg",General Shelter,27.8092,-82.6843,120,0,True,True,False,False,120
-Palm Harbor Middle,"1800 Tampa Rd, Palm Harbor",General Shelter,28.0789,-82.7437,200,0,True,True,False,False,200
-Ross Norton,"1426 S Martin Luther King Jr Ave, Clearwater",General Shelter,27.9468,-82.7893,140,0,True,True,False,False,140
-Sanderlin K-8,"2350 22nd Ave S, St. Petersburg",General Shelter,27.7519,-82.6652,110,0,True,True,False,False,110
-Sexton Elementary,"1997 54th Ave N, St. Petersburg",General Shelter,27.8187,-82.6638,120,0,True,True,False,False,120
-Skycrest Elementary,"10 N Corona Ave, Clearwater",General Shelter,27.9683,-82.7584,130,0,True,True,False,False,130
+Gibbs High,"850 34th St S, St. Petersburg",Pet Friendly,27.7609,-82.6772,200,20,True,True,True,True,180
+Largo High,"410 Missouri Ave, Largo",Pet Friendly,27.9163,-82.7888,220,104,True,True,False,True,116
+Palm Harbor University High,"1900 Omaha St, Palm Harbor",Pet Friendly,28.0717,-82.7446,250,97,True,True,False,True,153
+Dunedin Middle,"70 Patricia Ave, Dunedin",Special Needs,28.0206,-82.7801,100,66,True,True,True,False,34
+John Hopkins Middle,"701 16th St S, St. Petersburg",Special Needs,27.7621,-82.6541,150,88,True,True,True,False,62
+Lealman Exchange,"5175 45th St N, St. Petersburg",Special Needs,27.8231,-82.6936,100,89,False,False,True,False,11
+Palm Harbor University High - Building 19,"1900 Omaha St, Palm Harbor",Special Needs,28.0718,-82.7446,100,90,True,True,True,False,10
+Belleair Elementary,"1156 Lakeview Rd, Clearwater",General Shelter,27.9413,-82.7874,150,80,True,True,False,False,70
+Carwise Middle,"3301 Bently Dr, Palm Harbor",General Shelter,28.0818,-82.7272,200,86,True,True,False,False,114
+Clearwater Fundamental Middle,"1660 Palmetto St, Clearwater",General Shelter,27.9695,-82.7695,180,117,True,True,False,False,63
+Clearwater High,"1951 Gulf to Bay Blvd, Clearwater",General Shelter,27.9603,-82.7528,250,88,True,True,False,False,162
+Dunedin Elementary,"900 Union St, Dunedin",General Shelter,28.0185,-82.7766,130,82,True,True,False,False,48
+Fairmount Park Elementary,"575 41st St S, St. Petersburg",General Shelter,27.7493,-82.6865,120,120,True,True,False,False,0
+Jamerson Elementary,"1200 37th St S, St. Petersburg",General Shelter,27.7531,-82.6821,110,70,True,True,False,False,40
+McMullen-Booth Elementary,"3025 Union St, Clearwater",General Shelter,27.9994,-82.7164,130,103,True,True,False,False,27
+Melrose Elementary,"1752 13th Ave S, St. Petersburg",General Shelter,27.7568,-82.6535,100,90,True,True,False,False,10
+Mildred Helms Elementary,"561 Clearwater Largo Rd S, Largo",General Shelter,27.9175,-82.7833,120,115,True,True,False,False,5
+New Heights Elementary,"3901 37th St N, St. Petersburg",General Shelter,27.8092,-82.6843,120,39,True,True,False,False,81
+Palm Harbor Middle,"1800 Tampa Rd, Palm Harbor",General Shelter,28.0789,-82.7437,200,91,True,True,False,False,109
+Ross Norton,"1426 S Martin Luther King Jr Ave, Clearwater",General Shelter,27.9468,-82.7893,140,66,True,True,False,False,74
+Sanderlin K-8,"2350 22nd Ave S, St. Petersburg",General Shelter,27.7519,-82.6652,110,82,True,True,False,False,28
+Sexton Elementary,"1997 54th Ave N, St. Petersburg",General Shelter,27.8187,-82.6638,120,120,True,True,False,False,0
+Skycrest Elementary,"10 N Corona Ave, Clearwater",General Shelter,27.9683,-82.7584,130,119,True,True,False,False,11
