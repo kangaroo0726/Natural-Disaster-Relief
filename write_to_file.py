@@ -44,3 +44,10 @@ def read_csv_to_dict(filename):
                                                 water_available])
 
         return shelter_dict
+
+import pandas as pd
+
+def write_df_to_csv(df, filename):
+    """Write a pandas DataFrame to CSV, overwriting the file."""
+    df.to_csv(filename, index=False)
+

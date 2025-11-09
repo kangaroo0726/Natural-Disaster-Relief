@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import folium
-import write_to_file
-from streamlit_folium import st_folium
 from folium import IFrame
+from streamlit_folium import st_folium
+import write_to_file
 
 # --- Page config ---
 st.set_page_config(
@@ -33,7 +33,7 @@ def load_data():
                     "water": s[8],
                     "medical": (category == "medical"),
                     "pet_friendly": (category == "pet_friendly")
-                }   
+                }
             if category == "medical":
                 all_shelters[name]["medical"] = True
             if category == "pet_friendly":
@@ -42,7 +42,7 @@ def load_data():
     df = pd.DataFrame(all_shelters.values())
     df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
     return df
- 
+
 df = load_data()
 
 # --- Header ---
@@ -51,7 +51,6 @@ st.markdown("View all open shelters, their locations, and available services.")
 
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
-
 pet_filter = st.sidebar.checkbox("Pet Friendly Only")
 medical_filter = st.sidebar.checkbox("Medical Facilities Only")
 
@@ -65,6 +64,35 @@ elif pet_filter:
 else:
     filtered_df = df
 
+# --- Admin Panel ---
+st.sidebar.header("Admin Panel")
+with st.sidebar.expander("Update Your Shelter Info"):
+    typed_name = st.text_input("Enter Your Shelter Name")
+
+    if typed_name:
+        if typed_name not in df["name"].values:
+            st.warning("Shelter not found. Please type the exact name.")
+        else:
+            shelter_row = df[df["name"] == typed_name].iloc[0]
+            new_current_occupancy = st.number_input(
+                "Current Occupancy",
+                min_value=0,
+                max_value=int(shelter_row["capacity"]),
+                value=int(shelter_row["current_occupancy"])
+            )
+            new_food = st.checkbox("Food Available", value=bool(shelter_row["food"]))
+            new_water = st.checkbox("Water Available", value=bool(shelter_row["water"]))
+
+            if st.button("Update Shelter"):
+                # Update dataframe
+                df.loc[df["name"] == typed_name, "current_occupancy"] = new_current_occupancy
+                df.loc[df["name"] == typed_name, "food"] = new_food
+                df.loc[df["name"] == typed_name, "water"] = new_water
+                df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
+
+                # Write back to CSV
+                write_to_file.write_df_to_csv(df, "shelters.csv")  # implement if not yet
+                st.success(f"{typed_name} updated successfully!")
 
 # --- Main section ---
 col1, col2 = st.columns([2, 3])
@@ -124,4 +152,4 @@ with col2:
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Data Source: Local Shelter Dataset") 
+st.caption("Data Source: Local Shelter Dataset")
