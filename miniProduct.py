@@ -45,9 +45,14 @@ def load_data():
     df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
     return df
 
+
 # --- Initialize session state ---
 if "df" not in st.session_state:
     st.session_state.df = load_data()
+
+if "admin_authenticated" not in st.session_state:
+    st.session_state.admin_authenticated = False
+
 
 # --- Haversine function ---
 def haversine(lat1, lon1, lat2, lon2):
@@ -59,19 +64,20 @@ def haversine(lat1, lon1, lat2, lon2):
     r = 6371
     return c * r
 
+
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
+
 
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
 pet_filter = st.sidebar.checkbox("Pet Friendly Only", key="pet_filter")
 medical_filter = st.sidebar.checkbox("Medical Facilities Only", key="medical_filter")
 
+
 # --- Filter Logic ---
 df = st.session_state.df
-
-# 🆕 Filter out full shelters first
 available_df = df[df["remaining_capacity"] > 0].copy()
 
 if pet_filter and medical_filter:
@@ -83,74 +89,79 @@ elif pet_filter:
 else:
     filtered_df = available_df
 
-# --- Main layout ---
-col1, col2 = st.columns([2, 3])
 
 # --- Admin Panel ---
 st.sidebar.header("Admin Panel")
-with st.sidebar.expander("Update Your Shelter Info"):
-    typed_name = st.text_input("Enter Your Shelter Name", key="typed_name")
-    if typed_name and typed_name in df["name"].values:
-        shelter_row = df[df["name"] == typed_name].iloc[0]
 
-        # Initialize state
-        if f"occupancy_{typed_name}" not in st.session_state:
-            st.session_state[f"occupancy_{typed_name}"] = int(shelter_row["current_occupancy"])
-        if f"food_{typed_name}" not in st.session_state:
-            st.session_state[f"food_{typed_name}"] = bool(shelter_row["food"])
-        if f"water_{typed_name}" not in st.session_state:
-            st.session_state[f"water_{typed_name}"] = bool(shelter_row["water"])
+if not st.session_state.admin_authenticated:
+    password = st.sidebar.text_input("Enter Admin Password", type="password")
+    if st.sidebar.button("Login"):
+        if password == "whatever":
+            st.session_state.admin_authenticated = True
+            st.sidebar.success("Access granted.")
+        else:
+            st.sidebar.error("Incorrect password.")
+else:
+    st.sidebar.success("✅ Logged in as Admin")
+    if st.sidebar.button("Logout"):
+        st.session_state.admin_authenticated = False
 
-        st.session_state[f"occupancy_{typed_name}"] = st.number_input(
-            "Current Occupancy",
-            min_value=0,
-            max_value=int(shelter_row["capacity"]),
-            value=st.session_state[f"occupancy_{typed_name}"],
-            key=f"occupancy_input_{typed_name}"
-        )
-        st.session_state[f"food_{typed_name}"] = st.checkbox(
-            "Food Available",
-            value=st.session_state[f"food_{typed_name}"],
-            key=f"food_checkbox_{typed_name}"
-        )
-        st.session_state[f"water_{typed_name}"] = st.checkbox(
-            "Water Available",
-            value=st.session_state[f"water_{typed_name}"],
-            key=f"water_checkbox_{typed_name}"
-        )
+    with st.sidebar.expander("Update Your Shelter Info"):
+        typed_name = st.text_input("Enter Your Shelter Name", key="typed_name")
+        if typed_name and typed_name in df["name"].values:
+            shelter_row = df[df["name"] == typed_name].iloc[0]
 
-        if st.button("Update Shelter", key=f"update_button_{typed_name}"):
-            st.session_state.df.loc[df["name"] == typed_name, "current_occupancy"] = st.session_state[f"occupancy_{typed_name}"]
-            st.session_state.df.loc[df["name"] == typed_name, "food"] = st.session_state[f"food_{typed_name}"]
-            st.session_state.df.loc[df["name"] == typed_name, "water"] = st.session_state[f"water_{typed_name}"]
+            if f"occupancy_{typed_name}" not in st.session_state:
+                st.session_state[f"occupancy_{typed_name}"] = int(shelter_row["current_occupancy"])
+            if f"food_{typed_name}" not in st.session_state:
+                st.session_state[f"food_{typed_name}"] = bool(shelter_row["food"])
+            if f"water_{typed_name}" not in st.session_state:
+                st.session_state[f"water_{typed_name}"] = bool(shelter_row["water"])
 
-            st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
+            st.session_state[f"occupancy_{typed_name}"] = st.number_input(
+                "Current Occupancy",
+                min_value=0,
+                max_value=int(shelter_row["capacity"]),
+                value=st.session_state[f"occupancy_{typed_name}"],
+                key=f"occupancy_input_{typed_name}"
+            )
+            st.session_state[f"food_{typed_name}"] = st.checkbox(
+                "Food Available",
+                value=st.session_state[f"food_{typed_name}"],
+                key=f"food_checkbox_{typed_name}"
+            )
+            st.session_state[f"water_{typed_name}"] = st.checkbox(
+                "Water Available",
+                value=st.session_state[f"water_{typed_name}"],
+                key=f"water_checkbox_{typed_name}"
+            )
 
-            write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
-            st.success(f"{typed_name} updated successfully!")
+            if st.button("Update Shelter", key=f"update_button_{typed_name}"):
+                st.session_state.df.loc[df["name"] == typed_name, "current_occupancy"] = st.session_state[f"occupancy_{typed_name}"]
+                st.session_state.df.loc[df["name"] == typed_name, "food"] = st.session_state[f"food_{typed_name}"]
+                st.session_state.df.loc[df["name"] == typed_name, "water"] = st.session_state[f"water_{typed_name}"]
+                st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
+
+                write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
+                st.success(f"{typed_name} updated successfully!")
+
+
+# --- Main layout ---
+col1, col2 = st.columns([2, 3])
 
 # --- Shelter List ---
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
-        filtered_df[
-            [
-                "name",
-                "address",
-                "remaining_capacity",
-                "food",
-                "water",
-            ]
-        ],
+        filtered_df[["name", "address", "remaining_capacity", "food", "water"]],
         use_container_width=True,
         hide_index=True,
     )
 
-    # --- Geolocation & nearest shelter ---
+    # --- Geolocation ---
     st.subheader("📍 Find Nearest Shelter")
     user_location = streamlit_geolocation()
 
-    # Only consider shelters with remaining capacity > 0
     active_df = filtered_df[filtered_df["remaining_capacity"] > 0].copy()
 
     if (
@@ -170,13 +181,14 @@ with col1:
             nearest = active_df.loc[active_df["distance_km"].idxmin()]
             st.success(f"Nearest shelter: **{nearest['name']}** ({nearest['distance_km']:.1f} km away)")
             maps_link = f"https://www.google.com/maps/dir/{user_lat},{user_lon}/{nearest['lat']},{nearest['lon']}/"
-            st.markdown(f"[Get Directions on Google Maps]({maps_link})")
+            st.markdown(f"[🗺️ Get Directions on Google Maps]({maps_link})")
         else:
             st.warning("No shelters with available capacity meet your criteria.")
     else:
         st.info("Please allow location access in your browser.")
 
-# --- Shelter Map ---
+
+# --- Map ---
 with col2:
     st.subheader("🗺️ Shelter Locations")
     midpoint = (
@@ -185,7 +197,6 @@ with col2:
     )
     m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    #Add markers only for shelters with available capacity
     for _, row in filtered_df[filtered_df["remaining_capacity"] > 0].iterrows():
         html_content = f"""
         <div style="width: 250px; font-family: Arial; line-height: 1.4; padding: 5px;">
@@ -203,6 +214,7 @@ with col2:
         folium.Marker(location=[row["lat"], row["lon"]], tooltip=row["name"], popup=popup).add_to(m)
 
     st_folium(m, width=700, height=500)
+
 
 # --- Footer ---
 st.markdown("---")
