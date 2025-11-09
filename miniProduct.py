@@ -155,7 +155,7 @@ else:
                 except Exception:
                     st.session_state.df.to_csv("shelters.csv", index=False)
 
-                st.success(f"{typed_name} updated successfully!")
+                st.success(f"{typed_name} updated successfully, click to confirm!")
 
 
 # --- Main layout ---
