@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-import pydeck as pdk
+import folium
+from streamlit_folium import st_folium
 
 # --- Page config ---
 st.set_page_config(
@@ -9,13 +10,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Load CSV data ---
+# --- Load JSON data ---
 @st.cache_data
 def load_data():
-    # Use read_csv (not read_json) since it's a CSV file
     return pd.read_json("shelterData.csv")
 
 df = load_data()
+
+# --- Clean type column for consistent comparison ---
+df["type"] = df["type"].astype(str).str.strip().str.lower()
 
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
@@ -23,71 +26,71 @@ st.markdown("View all open shelters, their locations, and available services.")
 
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
-type_filter = st.sidebar.multiselect("Shelter Type", df["type"].unique(), default=df["type"].unique())
 pet_filter = st.sidebar.checkbox("Pet Friendly Only")
 medical_filter = st.sidebar.checkbox("Medical Facilities Only")
 
-filtered_df = df[df["type"].isin(type_filter)]
-if pet_filter:
-    filtered_df = filtered_df[filtered_df["pet_friendly"]]
-if medical_filter:
-    filtered_df = filtered_df[filtered_df["medical"]]
+# --- Filter Logic ---
+if pet_filter and medical_filter:
+    filtered_df = df[(df["pet_friendly"]) & (df["medical"])]
+elif medical_filter:
+    filtered_df = df[df["medical"]]
+elif pet_filter:
+    filtered_df = df[df["pet_friendly"]]
+else:
+    filtered_df = df[df["type"].str.contains("general", case=False, na=False)]
 
-# --- Main section ---
+# --- Create map ---
+midpoint = (filtered_df["lat"].mean(), filtered_df["lon"].mean())
+m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
+
+# Add smaller blue circle markers with tooltip
+for _, row in filtered_df.iterrows():
+    folium.CircleMarker(
+        location=[row["lat"], row["lon"]],
+        radius=4,           # smaller marker
+        color="blue",
+        fill=True,
+        fill_color="blue",
+        fill_opacity=0.7,
+        tooltip=row["name"],  # show name on hover
+    ).add_to(m)
+
+# --- Layout ---
 col1, col2 = st.columns([2, 3])
 
-with col1:
-    st.subheader("📋 Shelter List")
-    st.dataframe(
-        filtered_df[[
-            "name", "address", "type", "capacity", "current_occupancy",
-            "food", "water", "medical", "pet_friendly"
-        ]],
-        use_container_width=True,
-        hide_index=True
-    )
-
+# Column 2: Map
 with col2:
     st.subheader("🗺️ Shelter Locations")
+    map_data = st_folium(m, width=700, height=500)
 
-    midpoint = (filtered_df["lat"].mean(), filtered_df["lon"].mean())
+# Column 1: Shelter list / selected info
+with col1:
+    st.subheader("📋 Shelter Information")
 
-    st.pydeck_chart(
-        pdk.Deck(
-            # ✅ Use OpenStreetMap for standard map colors
-            map_provider="openstreetmap",
-            map_style=None,
-            initial_view_state=pdk.ViewState(
-                latitude=midpoint[0],
-                longitude=midpoint[1],
-                zoom=10,
-                pitch=0,
-            ),
-            layers=[
-                pdk.Layer(
-                    "ScatterplotLayer",
-                    data=filtered_df,
-                    get_position=["lon", "lat"],
-                    get_color=[0, 100, 255, 180],  # Light blue markers
-                    get_radius=150,
-                    pickable=True,
-                ),
+    # If a marker was clicked, display info
+    if map_data and map_data.get("last_object_clicked_tooltip"):
+        selected_name = map_data["last_object_clicked_tooltip"]
+        selected = filtered_df[filtered_df["name"] == selected_name].iloc[0]
+
+        st.markdown(f"### 🏠 {selected['name']}")
+        st.write(f"**Address:** {selected['address']}")
+        st.write(f"**Food Available:** {'✅' if selected['food'] else '❌'}")
+        st.write(f"**Water Available:** {'✅' if selected['water'] else '❌'}")
+        st.write(f"**Capacity:** {selected['capacity']}")
+        st.write(f"**Current Occupancy:** {selected['current_occupancy']}")
+        st.write(f"**Medical:** {'✅' if selected['medical'] else '❌'}")
+        st.write(f"**Pet Friendly:** {'✅' if selected['pet_friendly'] else '❌'}")
+
+    else:
+        # Show the default shelter list
+        st.dataframe(
+            filtered_df[
+                ["name", "address", "food", "water"]
             ],
-            tooltip={
-                "html": "<b>{name}</b><br/>{address}<br/>Type: {type}<br/>Capacity: {capacity}",
-                "style": {"color": "white"}
-            }
+            use_container_width=True,
+            hide_index=True,
         )
-    )
-
-# --- Summary stats ---
-st.markdown("### 📊 Summary Statistics")
-colA, colB, colC, colD = st.columns(4)
-colA.metric("Total Shelters", len(filtered_df))
-colB.metric("Total Capacity", filtered_df["capacity"].sum())
-colC.metric("Average Capacity", int(filtered_df["capacity"].mean()))
-colD.metric("Pet Friendly", sum(filtered_df["pet_friendly"]))
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Data Source: Local Shelter Dataset | Streamlit App by You 😊")
+st.caption("Data Source: Local Shelter Dataset")
