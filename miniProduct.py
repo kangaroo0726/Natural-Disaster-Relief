@@ -15,6 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
+
 # --- Load CSV data ---
 @st.cache_data(ttl=1)
 def load_data():
@@ -90,21 +91,28 @@ else:
     filtered_df = available_df
 
 
-# --- Admin Panel ---
+# --- Admin Panel (sidebar) ---
 st.sidebar.header("Admin Panel")
 
 if not st.session_state.admin_authenticated:
-    password = st.sidebar.text_input("Enter Admin Password", type="password")
-    if st.sidebar.button("Login"):
-        if password == "whatever":
-            st.session_state.admin_authenticated = True
-            st.sidebar.success("Access granted.")
-        else:
-            st.sidebar.error("Incorrect password.")
+    with st.sidebar.form("login_form"):
+        password = st.text_input("Enter Admin Password", type="password")
+        login = st.form_submit_button("Login")
+        if login:
+            if password == "whatever":
+                st.session_state.admin_authenticated = True
+                st.success("Access granted.")
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
 else:
     st.sidebar.success("✅ Logged in as Admin")
-    if st.sidebar.button("Logout"):
-        st.session_state.admin_authenticated = False
+    with st.sidebar.form("logout_form"):
+        logout = st.form_submit_button("Logout")
+        if logout:
+            st.session_state.admin_authenticated = False
+            st.success("Logged out successfully.")
+            st.rerun()
 
     with st.sidebar.expander("Update Your Shelter Info"):
         typed_name = st.text_input("Enter Your Shelter Name", key="typed_name")
@@ -142,7 +150,11 @@ else:
                 st.session_state.df.loc[df["name"] == typed_name, "water"] = st.session_state[f"water_{typed_name}"]
                 st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
 
-                write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
+                try:
+                    write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
+                except Exception:
+                    st.session_state.df.to_csv("shelters.csv", index=False)
+
                 st.success(f"{typed_name} updated successfully!")
 
 
@@ -174,6 +186,7 @@ with col1:
         user_lon = user_location["longitude"]
 
         if not active_df.empty:
+            active_df = active_df.copy()
             active_df["distance_km"] = active_df.apply(
                 lambda row: haversine(user_lat, user_lon, row["lat"], row["lon"]),
                 axis=1,
