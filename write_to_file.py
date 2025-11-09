@@ -21,10 +21,3 @@ def read_csv_to_dict(filename):
                                           shelter_occupancy, food_available, water_available,
                                           medical_aid_available, pet_friendly]
         return shelter_dict
-
-
-def main():
-    shelter_dict = read_csv_to_dict("shelters.csv")
-
-
-main()
