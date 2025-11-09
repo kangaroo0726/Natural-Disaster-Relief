@@ -4,6 +4,8 @@ import folium
 from folium import IFrame
 from streamlit_folium import st_folium
 import write_to_file
+import math
+from streamlit_geolocation import streamlit_geolocation  # Correct import
 
 # --- Page config ---
 st.set_page_config(
@@ -45,6 +47,16 @@ def load_data():
 
 df = load_data()
 
+# --- Haversine function ---
+def haversine(lat1, lon1, lat2, lon2):
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    r = 6371  # Earth radius in km
+    return c * r
+
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
@@ -64,7 +76,7 @@ elif pet_filter:
 else:
     filtered_df = df
 
-# --- Admin Panel ---
+# --- Admin Panel (kept in sidebar) ---
 st.sidebar.header("Admin Panel")
 with st.sidebar.expander("Update Your Shelter Info"):
     typed_name = st.text_input("Enter Your Shelter Name")
@@ -84,20 +96,18 @@ with st.sidebar.expander("Update Your Shelter Info"):
             new_water = st.checkbox("Water Available", value=bool(shelter_row["water"]))
 
             if st.button("Update Shelter"):
-                # Update dataframe
                 df.loc[df["name"] == typed_name, "current_occupancy"] = new_current_occupancy
                 df.loc[df["name"] == typed_name, "food"] = new_food
                 df.loc[df["name"] == typed_name, "water"] = new_water
                 df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
 
-                # Write back to CSV
-                write_to_file.write_df_to_csv(df, "shelters.csv")  # implement if not yet
+                df.to_csv("shelters.csv", index=False)
                 st.success(f"{typed_name} updated successfully!")
 
 # --- Main section ---
 col1, col2 = st.columns([2, 3])
 
-# Column 1: Shelter list
+# Column 1: Shelter list + nearest shelter
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
@@ -114,18 +124,43 @@ with col1:
         hide_index=True,
     )
 
+    # --- Geolocation & nearest shelter ---
+    st.subheader("📍 Find Nearest Shelter")
+    user_location = streamlit_geolocation()
+
+    # Only calculate distances if coordinates exist
+    if (
+        user_location
+        and isinstance(user_location, dict)
+        and user_location.get("latitude") is not None
+        and user_location.get("longitude") is not None
+    ):
+        user_lat = user_location["latitude"]
+        user_lon = user_location["longitude"]
+
+        filtered_df = filtered_df.copy()
+        filtered_df["distance_km"] = filtered_df.apply(
+            lambda row: haversine(user_lat, user_lon, row["lat"], row["lon"]),
+            axis=1,
+        )
+
+        nearest = filtered_df.loc[filtered_df["distance_km"].idxmin()]
+        st.success(f"Nearest shelter: **{nearest['name']}** ({nearest['distance_km']:.1f} km away)")
+        maps_link = f"https://www.google.com/maps/dir/{user_lat},{user_lon}/{nearest['lat']},{nearest['lon']}/"
+        st.markdown(f"[Get Directions on Google Maps]({maps_link})")
+
+    else:
+        st.info("Please allow location access in your browser or your browser does not support geolocation.")
+
 # Column 2: Map
 with col2:
     st.subheader("🗺️ Shelter Locations")
-
-    # Center the map
     midpoint = (
         filtered_df["lat"].mean() if not filtered_df.empty else 27.76,
-        filtered_df["lon"].mean() if not filtered_df.empty else -82.66
+        filtered_df["lon"].mean() if not filtered_df.empty else -82.66,
     )
     m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    # Add markers
     for _, row in filtered_df.iterrows():
         html_content = f"""
         <div style="width: 250px; font-family: Arial; line-height: 1.4; padding: 5px;">
@@ -147,7 +182,6 @@ with col2:
             popup=popup,
         ).add_to(m)
 
-    # Render map
     st_folium(m, width=700, height=500)
 
 # --- Footer ---
