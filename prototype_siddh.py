@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import folium
-from folium import IFrame
-from streamlit_folium import st_folium
 import write_to_file
+from streamlit_folium import st_folium
+from folium import IFrame
+from random import randint
 
 # --- Page config ---
 st.set_page_config(
@@ -13,7 +14,7 @@ st.set_page_config(
 )
 
 # --- Load CSV data ---
-@st.cache_data
+@st.cache_data(ttl=1)
 def load_data():
     data = write_to_file.read_csv_to_dict("shelters.csv")
     all_shelters = {}
@@ -38,23 +39,36 @@ def load_data():
                 all_shelters[name]["medical"] = True
             if category == "pet_friendly":
                 all_shelters[name]["pet_friendly"] = True
-
     df = pd.DataFrame(all_shelters.values())
     df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
     return df
 
-df = load_data()
+# --- Initialize session state ---
+if "df" not in st.session_state:
+    st.session_state.df = load_data()
 
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
 
+# --- Refresh Button ---
+if st.button("Refresh", key="refresh_button"):
+    for i in st.session_state.df.index:
+        change = randint(-5, 20)
+        new_occupancy = st.session_state.df.at[i, "current_occupancy"] + change
+        new_occupancy = max(0, min(new_occupancy, st.session_state.df.at[i, "capacity"]))
+        st.session_state.df.at[i, "current_occupancy"] = new_occupancy
+
+    st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
+    st.success("Shelters updated individually!")
+
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
-pet_filter = st.sidebar.checkbox("Pet Friendly Only")
-medical_filter = st.sidebar.checkbox("Medical Facilities Only")
+pet_filter = st.sidebar.checkbox("Pet Friendly Only", key="pet_filter")
+medical_filter = st.sidebar.checkbox("Medical Facilities Only", key="medical_filter")
 
 # --- Filter Logic ---
+df = st.session_state.df
 if pet_filter and medical_filter:
     filtered_df = df[(df["pet_friendly"]) & (df["medical"])]
 elif medical_filter:
@@ -64,68 +78,74 @@ elif pet_filter:
 else:
     filtered_df = df
 
+# --- Main layout ---
+col1, col2 = st.columns([2, 3])
+
 # --- Admin Panel ---
 st.sidebar.header("Admin Panel")
 with st.sidebar.expander("Update Your Shelter Info"):
-    typed_name = st.text_input("Enter Your Shelter Name")
+    typed_name = st.text_input("Enter Your Shelter Name", key="typed_name")
+    if typed_name and typed_name in df["name"].values:
+        shelter_row = df[df["name"] == typed_name].iloc[0]
 
-    if typed_name:
-        if typed_name not in df["name"].values:
-            st.warning("Shelter not found. Please type the exact name.")
-        else:
-            shelter_row = df[df["name"] == typed_name].iloc[0]
-            new_current_occupancy = st.number_input(
-                "Current Occupancy",
-                min_value=0,
-                max_value=int(shelter_row["capacity"]),
-                value=int(shelter_row["current_occupancy"])
-            )
-            new_food = st.checkbox("Food Available", value=bool(shelter_row["food"]))
-            new_water = st.checkbox("Water Available", value=bool(shelter_row["water"]))
+        # Initialize session_state for inputs
+        if f"occupancy_{typed_name}" not in st.session_state:
+            st.session_state[f"occupancy_{typed_name}"] = int(shelter_row["current_occupancy"])
+        if f"food_{typed_name}" not in st.session_state:
+            st.session_state[f"food_{typed_name}"] = bool(shelter_row["food"])
+        if f"water_{typed_name}" not in st.session_state:
+            st.session_state[f"water_{typed_name}"] = bool(shelter_row["water"])
 
-            if st.button("Update Shelter"):
-                # Update dataframe
-                df.loc[df["name"] == typed_name, "current_occupancy"] = new_current_occupancy
-                df.loc[df["name"] == typed_name, "food"] = new_food
-                df.loc[df["name"] == typed_name, "water"] = new_water
-                df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
+        # Input widgets with unique keys
+        st.session_state[f"occupancy_{typed_name}"] = st.number_input(
+            "Current Occupancy",
+            min_value=0,
+            max_value=int(shelter_row["capacity"]),
+            value=st.session_state[f"occupancy_{typed_name}"],
+            key=f"occupancy_input_{typed_name}"
+        )
+        st.session_state[f"food_{typed_name}"] = st.checkbox(
+            "Food Available",
+            value=st.session_state[f"food_{typed_name}"],
+            key=f"food_checkbox_{typed_name}"
+        )
+        st.session_state[f"water_{typed_name}"] = st.checkbox(
+            "Water Available",
+            value=st.session_state[f"water_{typed_name}"],
+            key=f"water_checkbox_{typed_name}"
+        )
 
-                # Write back to CSV
-                write_to_file.write_df_to_csv(df, "shelters.csv")  # implement if not yet
-                st.success(f"{typed_name} updated successfully!")
+        # Update Button
+        if st.button("Update Shelter", key=f"update_button_{typed_name}"):
+            st.session_state.df.loc[df["name"] == typed_name, "current_occupancy"] = st.session_state[f"occupancy_{typed_name}"]
+            st.session_state.df.loc[df["name"] == typed_name, "food"] = st.session_state[f"food_{typed_name}"]
+            st.session_state.df.loc[df["name"] == typed_name, "water"] = st.session_state[f"water_{typed_name}"]
 
-# --- Main section ---
-col1, col2 = st.columns([2, 3])
+            # Recalculate remaining capacity
+            st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
 
-# Column 1: Shelter list
+            # Write to CSV
+            write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
+            st.success(f"{typed_name} updated successfully!")
+
+# --- Shelter List ---
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
-        filtered_df[
-            [
-                "name",
-                "address",
-                "remaining_capacity",
-                "food",
-                "water",
-            ]
-        ],
+        filtered_df[["name", "address", "remaining_capacity", "food", "water"]],
         use_container_width=True,
-        hide_index=True,
+        hide_index=True
     )
 
-# Column 2: Map
+# --- Shelter Map ---
 with col2:
     st.subheader("🗺️ Shelter Locations")
-
-    # Center the map
     midpoint = (
         filtered_df["lat"].mean() if not filtered_df.empty else 27.76,
         filtered_df["lon"].mean() if not filtered_df.empty else -82.66
     )
     m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    # Add markers
     for _, row in filtered_df.iterrows():
         html_content = f"""
         <div style="width: 250px; font-family: Arial; line-height: 1.4; padding: 5px;">
@@ -140,14 +160,8 @@ with col2:
         """
         iframe = IFrame(html=html_content, width=270, height=180)
         popup = folium.Popup(iframe, max_width=300)
+        folium.Marker(location=[row["lat"], row["lon"]], tooltip=row["name"], popup=popup).add_to(m)
 
-        folium.Marker(
-            location=[row["lat"], row["lon"]],
-            tooltip=row["name"],
-            popup=popup,
-        ).add_to(m)
-
-    # Render map
     st_folium(m, width=700, height=500)
 
 # --- Footer ---
