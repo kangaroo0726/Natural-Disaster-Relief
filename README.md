@@ -28,4 +28,5 @@ Our prototype focuses on Pinellas County shelters in Florida as a sample area du
 2. Install the required packages: `streamlit`, `folium`, `streamlit_folium`, `streamlit_geolocation`
 3. Open your terminal in your IDE and type `streamlit run miniProduct.py` or type `python -m streamlit run miniProduct.py` if the first command doesn't work.
 4. The `streamlit` app should open in your browser!
+5. The password to access the admin panel is `whatever`.
 
