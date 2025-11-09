@@ -5,6 +5,9 @@ import write_to_file
 from streamlit_folium import st_folium
 from folium import IFrame
 from random import randint
+import math
+from streamlit_geolocation import streamlit_geolocation  # Correct import
+
 
 # --- Page config ---
 st.set_page_config(
@@ -46,6 +49,16 @@ def load_data():
 # --- Initialize session state ---
 if "df" not in st.session_state:
     st.session_state.df = load_data()
+
+# --- Haversine function ---
+def haversine(lat1, lon1, lat2, lon2):
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    r = 6371  # Earth radius in km
+    return c * r
 
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
@@ -129,13 +142,50 @@ with st.sidebar.expander("Update Your Shelter Info"):
             st.success(f"{typed_name} updated successfully!")
 
 # --- Shelter List ---
+# Column 1: Shelter list + nearest shelter
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
-        filtered_df[["name", "address", "remaining_capacity", "food", "water"]],
+        filtered_df[
+            [
+                "name",
+                "address",
+                "remaining_capacity",
+                "food",
+                "water",
+            ]
+        ],
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
+
+    # --- Geolocation & nearest shelter ---
+    st.subheader("📍 Find Nearest Shelter")
+    user_location = streamlit_geolocation()
+
+    # Only calculate distances if coordinates exist
+    if (
+        user_location
+        and isinstance(user_location, dict)
+        and user_location.get("latitude") is not None
+        and user_location.get("longitude") is not None
+    ):
+        user_lat = user_location["latitude"]
+        user_lon = user_location["longitude"]
+
+        filtered_df = filtered_df.copy()
+        filtered_df["distance_km"] = filtered_df.apply(
+            lambda row: haversine(user_lat, user_lon, row["lat"], row["lon"]),
+            axis=1,
+        )
+
+        nearest = filtered_df.loc[filtered_df["distance_km"].idxmin()]
+        st.success(f"Nearest shelter: **{nearest['name']}** ({nearest['distance_km']:.1f} km away)")
+        maps_link = f"https://www.google.com/maps/dir/{user_lat},{user_lon}/{nearest['lat']},{nearest['lon']}/"
+        st.markdown(f"[Get Directions on Google Maps]({maps_link})")
+
+    else:
+        st.info("Please allow location access in your browser or your browser does not support geolocation.")
 
 # --- Shelter Map ---
 with col2:
