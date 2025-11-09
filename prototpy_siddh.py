@@ -52,13 +52,8 @@ with col1:
             [
                 "name",
                 "address",
-                "type",
-                "capacity",
-                "current_occupancy",
                 "food",
                 "water",
-                "medical",
-                "pet_friendly",
             ]
         ],
         use_container_width=True,
