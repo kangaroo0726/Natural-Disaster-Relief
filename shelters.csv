@@ -1,8 +1,8 @@
 name,type,address,lat,lon,capacity,current_occupancy,food,water,medical,pet_friendly,remaining_capacity
-Gibbs High,Pet Friendly,"850 34th St S, St. Petersburg",27.7609,-82.6772,200,10,True,True,True,True,190
+Gibbs High,Pet Friendly,"850 34th St S, St. Petersburg",27.7609,-82.6772,200,200,True,True,True,True,0
 Largo High,Pet Friendly,"410 Missouri Ave, Largo",27.9163,-82.7888,220,104,True,True,False,True,116
 Palm Harbor University High,Pet Friendly,"1900 Omaha St, Palm Harbor",28.0717,-82.7446,250,97,True,True,False,True,153
-Dunedin Middle,Special Needs,"70 Patricia Ave, Dunedin",28.0206,-82.7801,100,66,True,True,True,False,34
+Dunedin Middle,Special Needs,"70 Patricia Ave, Dunedin",28.0206,-82.7801,100,98,True,False,True,False,2
 John Hopkins Middle,Special Needs,"701 16th St S, St. Petersburg",27.7621,-82.6541,150,88,True,True,True,False,62
 Lealman Exchange,Special Needs,"5175 45th St N, St. Petersburg",27.8231,-82.6936,100,0,True,True,True,False,100
 Palm Harbor University High - Building 19,Special Needs,"1900 Omaha St, Palm Harbor",28.0718,-82.7446,100,90,True,True,True,False,10
