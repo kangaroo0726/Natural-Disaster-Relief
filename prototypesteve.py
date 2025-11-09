@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-import pydeck as pdk
+import folium
+from streamlit_folium import st_folium
 
 # --- Page config ---
 st.set_page_config(
@@ -12,7 +13,6 @@ st.set_page_config(
 # --- Load CSV data ---
 @st.cache_data
 def load_data():
-    # Use read_csv (not read_json) since it's a CSV file
     return pd.read_json("shelterData.csv")
 
 df = load_data()
@@ -23,7 +23,9 @@ st.markdown("View all open shelters, their locations, and available services.")
 
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
-type_filter = st.sidebar.multiselect("Shelter Type", df["type"].unique(), default=df["type"].unique())
+type_filter = st.sidebar.multiselect(
+    "Shelter Type", df["type"].unique(), default=df["type"].unique()
+)
 pet_filter = st.sidebar.checkbox("Pet Friendly Only")
 medical_filter = st.sidebar.checkbox("Medical Facilities Only")
 
@@ -36,49 +38,54 @@ if medical_filter:
 # --- Main section ---
 col1, col2 = st.columns([2, 3])
 
+# Column 1: Shelter list
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
-        filtered_df[[
-            "name", "address", "type", "capacity", "current_occupancy",
-            "food", "water", "medical", "pet_friendly"
-        ]],
+        filtered_df[
+            [
+                "name",
+                "address",
+                "type",
+                "capacity",
+                "current_occupancy",
+                "food",
+                "water",
+                "medical",
+                "pet_friendly",
+            ]
+        ],
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
 
+# Column 2: Map
 with col2:
     st.subheader("🗺️ Shelter Locations")
 
+    # Center the map
     midpoint = (filtered_df["lat"].mean(), filtered_df["lon"].mean())
+    m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    st.pydeck_chart(
-        pdk.Deck(
-            # ✅ Use OpenStreetMap for standard map colors
-            map_provider="openstreetmap",
-            map_style=None,
-            initial_view_state=pdk.ViewState(
-                latitude=midpoint[0],
-                longitude=midpoint[1],
-                zoom=10,
-                pitch=0,
+    # Add markers
+    for _, row in filtered_df.iterrows():
+        folium.Marker(
+            location=[row["lat"], row["lon"]],
+            tooltip=row["name"],
+            popup=(
+                f"<b>{row['name']}</b><br>"
+                f"Address: {row['address']}<br>"
+                f"Type: {row['type']}<br>"
+                f"Capacity: {row['capacity']}<br>"
+                f"Food: {'Yes' if row['food'] else 'No'}<br>"
+                f"Water: {'Yes' if row['water'] else 'No'}<br>"
+                f"Medical: {'Yes' if row['medical'] else 'No'}<br>"
+                f"Pet Friendly: {'Yes' if row['pet_friendly'] else 'No'}"
             ),
-            layers=[
-                pdk.Layer(
-                    "ScatterplotLayer",
-                    data=filtered_df,
-                    get_position=["lon", "lat"],
-                    get_color=[0, 100, 255, 180],  # Light blue markers
-                    get_radius=150,
-                    pickable=True,
-                ),
-            ],
-            tooltip={
-                "html": "<b>{name}</b><br/>{address}<br/>Type: {type}<br/>Capacity: {capacity}",
-                "style": {"color": "white"}
-            }
-        )
-    )
+        ).add_to(m)
+
+    # Render map
+    st_folium(m, width=700, height=500)
 
 # --- Summary stats ---
 st.markdown("### 📊 Summary Statistics")
