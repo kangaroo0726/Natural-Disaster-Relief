@@ -14,12 +14,29 @@ st.set_page_config(
 # --- Load CSV data ---
 @st.cache_data
 def load_data():
-    return pd.read_json("shelterData.csv")
+    data = write_to_file.read_csv_to_dict("shelters.csv")
+    rows = []
+    for category, shelters in data.items():
+        for s in shelters:
+            rows.append({
+                "name": s[0],
+                "type": s[1],
+                "address": s[2],
+                "lat": s[3],
+                "lon": s[4],
+                "capacity": s[5],
+                "current_occupancy": s[6],
+                "food": s[7],
+                "water": s[8],
+                "medical": (category == "medical"),
+                "pet_friendly": (category == "pet_friendly")
+            })
+
+    return pd.DataFrame(rows)
+
+
 
 df = load_data()
-
-# --- Clean type column for consistent comparison ---
-df["type"] = df["type"].astype(str).str.strip().str.lower()
 
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
@@ -39,7 +56,7 @@ elif medical_filter:
 elif pet_filter:
     filtered_df = df[df["pet_friendly"]]
 else:
-    filtered_df = df[df["type"].str.contains("general", case = False, na = False)]
+    filtered_df = df
 
 
 # --- Main section ---
@@ -66,7 +83,10 @@ with col2:
     st.subheader("🗺️ Shelter Locations")
 
     # Center the map
-    midpoint = (filtered_df["lat"].mean(), filtered_df["lon"].mean())
+    midpoint = (
+        filtered_df["lat"].mean() if not filtered_df.empty else 27.76,
+        filtered_df["lon"].mean() if not filtered_df.empty else -82.66
+    )
     m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
     # Add markers
