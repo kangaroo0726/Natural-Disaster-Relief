@@ -4,7 +4,7 @@ import pandas as pd
 # Load CSV data
 @st.cache_data
 def load_data():
-    return pd.read_csv("shelters.csv")
+    return pd.read_json("shelterData.csv")
 
 df = load_data()
 
