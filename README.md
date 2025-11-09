@@ -1,8 +1,4 @@
----
-
 # County Shelter Access Portal (CSAP)
-
----
 
 ## Introduction
 
