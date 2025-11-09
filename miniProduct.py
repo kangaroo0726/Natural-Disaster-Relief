@@ -64,17 +64,6 @@ def haversine(lat1, lon1, lat2, lon2):
 st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
 
-# --- Refresh Button ---
-if st.button("Refresh", key="refresh_button"):
-    for i in st.session_state.df.index:
-        change = randint(-5, 20)
-        new_occupancy = st.session_state.df.at[i, "current_occupancy"] + change
-        new_occupancy = max(0, min(new_occupancy, st.session_state.df.at[i, "capacity"]))
-        st.session_state.df.at[i, "current_occupancy"] = new_occupancy
-
-    st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
-    st.success("Shelters updated individually!")
-
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
 pet_filter = st.sidebar.checkbox("Pet Friendly Only", key="pet_filter")
