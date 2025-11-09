@@ -3,7 +3,6 @@ import pandas as pd
 import folium
 import write_to_file
 from streamlit_folium import st_folium
-from time import sleep
 
 # --- Page config ---
 st.set_page_config(
@@ -34,6 +33,7 @@ def load_data():
             })
 
     return pd.DataFrame(rows)
+
 
 
 df = load_data()
