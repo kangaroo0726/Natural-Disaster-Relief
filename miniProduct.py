@@ -115,7 +115,7 @@ else:
             st.rerun()
 
     with st.sidebar.expander("Update Your Shelter Info"):
-        typed_name = st.text_input("Enter Your Shelter Name", key="typed_name")
+        typed_name = st.text_input("Enter Your Shelter Name (case sensitive)", key="typed_name")
         if typed_name and typed_name in df["name"].values:
             shelter_row = df[df["name"] == typed_name].iloc[0]
 
@@ -164,10 +164,11 @@ col1, col2 = st.columns([2, 3])
 # --- Shelter List ---
 with col1:
     st.subheader("📋 Shelter List")
-    st.dataframe(
+    st.data_editor(
         filtered_df[["name", "address", "remaining_capacity", "food", "water"]],
         use_container_width=True,
         hide_index=True,
+        disabled=True
     )
 
     # --- Geolocation ---
