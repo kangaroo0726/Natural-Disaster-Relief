@@ -16,24 +16,30 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     data = write_to_file.read_csv_to_dict("shelters.csv")
-    rows = []
+    all_shelters = {}
     for category, shelters in data.items():
         for s in shelters:
-            rows.append({
-                "name": s[0],
-                "type": s[1],
-                "address": s[2],
-                "lat": s[3],
-                "lon": s[4],
-                "capacity": s[5],
-                "current_occupancy": s[6],
-                "food": s[7],
-                "water": s[8],
-                "medical": (category == "medical"),
-                "pet_friendly": (category == "pet_friendly")
-            })
+            name = s[0]
+            if name not in all_shelters:
+                all_shelters[name] = {
+                    "name": s[0],
+                    "type": s[1],
+                    "address": s[2],
+                    "lat": s[3],
+                    "lon": s[4],
+                    "capacity": s[5],
+                    "current_occupancy": s[6],
+                    "food": s[7],
+                    "water": s[8],
+                    "medical": (category == "medical"),
+                    "pet_friendly": (category == "pet_friendly")
+                }   
+            if category == "medical":
+                all_shelters[name]["medical"] = True
+            if category == "pet_friendly":
+                all_shelters[name]["pet_friendly"] = True
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(all_shelters.values())
     df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
     return df
  
