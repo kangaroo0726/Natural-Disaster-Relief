@@ -1,4 +1,4 @@
-name,type,address,lat,lon,capacity,current_occupancy,food,water,medical,pet_friendly,remaining_capacity
+name,address,type,lat,lon,capacity,current_occupancy,food,water,medical,pet_friendly,remaining_capacity
 Gibbs High,"850 34th St S, St. Petersburg",Pet Friendly,27.7609,-82.6772,200,20,True,True,True,True,180
 Largo High,"410 Missouri Ave, Largo",Pet Friendly,27.9163,-82.7888,220,104,True,True,False,True,116
 Palm Harbor University High,"1900 Omaha St, Palm Harbor",Pet Friendly,28.0717,-82.7446,250,97,True,True,False,True,153
