@@ -4,9 +4,8 @@ import folium
 import write_to_file
 from streamlit_folium import st_folium
 from folium import IFrame
-from random import randint
 import math
-from streamlit_geolocation import streamlit_geolocation  # Correct import
+from streamlit_geolocation import streamlit_geolocation
 
 
 # --- Page config ---
@@ -57,13 +56,12 @@ def haversine(lat1, lon1, lat2, lon2):
     dlon = lon2 - lon1
     a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
     c = 2 * math.asin(math.sqrt(a))
-    r = 6371  # Earth radius in km
+    r = 6371
     return c * r
 
 # --- Header ---
 st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
-
 
 # --- Sidebar filters ---
 st.sidebar.header("Filter Shelters")
@@ -72,14 +70,18 @@ medical_filter = st.sidebar.checkbox("Medical Facilities Only", key="medical_fil
 
 # --- Filter Logic ---
 df = st.session_state.df
+
+# 🆕 Filter out full shelters first
+available_df = df[df["remaining_capacity"] > 0].copy()
+
 if pet_filter and medical_filter:
-    filtered_df = df[(df["pet_friendly"]) & (df["medical"])]
+    filtered_df = available_df[(available_df["pet_friendly"]) & (available_df["medical"])]
 elif medical_filter:
-    filtered_df = df[df["medical"]]
+    filtered_df = available_df[available_df["medical"]]
 elif pet_filter:
-    filtered_df = df[df["pet_friendly"]]
+    filtered_df = available_df[available_df["pet_friendly"]]
 else:
-    filtered_df = df
+    filtered_df = available_df
 
 # --- Main layout ---
 col1, col2 = st.columns([2, 3])
@@ -91,7 +93,7 @@ with st.sidebar.expander("Update Your Shelter Info"):
     if typed_name and typed_name in df["name"].values:
         shelter_row = df[df["name"] == typed_name].iloc[0]
 
-        # Initialize session_state for inputs
+        # Initialize state
         if f"occupancy_{typed_name}" not in st.session_state:
             st.session_state[f"occupancy_{typed_name}"] = int(shelter_row["current_occupancy"])
         if f"food_{typed_name}" not in st.session_state:
@@ -99,7 +101,6 @@ with st.sidebar.expander("Update Your Shelter Info"):
         if f"water_{typed_name}" not in st.session_state:
             st.session_state[f"water_{typed_name}"] = bool(shelter_row["water"])
 
-        # Input widgets with unique keys
         st.session_state[f"occupancy_{typed_name}"] = st.number_input(
             "Current Occupancy",
             min_value=0,
@@ -118,21 +119,17 @@ with st.sidebar.expander("Update Your Shelter Info"):
             key=f"water_checkbox_{typed_name}"
         )
 
-        # Update Button
         if st.button("Update Shelter", key=f"update_button_{typed_name}"):
             st.session_state.df.loc[df["name"] == typed_name, "current_occupancy"] = st.session_state[f"occupancy_{typed_name}"]
             st.session_state.df.loc[df["name"] == typed_name, "food"] = st.session_state[f"food_{typed_name}"]
             st.session_state.df.loc[df["name"] == typed_name, "water"] = st.session_state[f"water_{typed_name}"]
 
-            # Recalculate remaining capacity
             st.session_state.df["remaining_capacity"] = st.session_state.df["capacity"] - st.session_state.df["current_occupancy"]
 
-            # Write to CSV
             write_to_file.write_df_to_csv(st.session_state.df, "shelters.csv")
             st.success(f"{typed_name} updated successfully!")
 
 # --- Shelter List ---
-# Column 1: Shelter list + nearest shelter
 with col1:
     st.subheader("📋 Shelter List")
     st.dataframe(
@@ -153,7 +150,9 @@ with col1:
     st.subheader("📍 Find Nearest Shelter")
     user_location = streamlit_geolocation()
 
-    # Only calculate distances if coordinates exist
+    # Only consider shelters with remaining capacity > 0
+    active_df = filtered_df[filtered_df["remaining_capacity"] > 0].copy()
+
     if (
         user_location
         and isinstance(user_location, dict)
@@ -163,19 +162,19 @@ with col1:
         user_lat = user_location["latitude"]
         user_lon = user_location["longitude"]
 
-        filtered_df = filtered_df.copy()
-        filtered_df["distance_km"] = filtered_df.apply(
-            lambda row: haversine(user_lat, user_lon, row["lat"], row["lon"]),
-            axis=1,
-        )
-
-        nearest = filtered_df.loc[filtered_df["distance_km"].idxmin()]
-        st.success(f"Nearest shelter: **{nearest['name']}** ({nearest['distance_km']:.1f} km away)")
-        maps_link = f"https://www.google.com/maps/dir/{user_lat},{user_lon}/{nearest['lat']},{nearest['lon']}/"
-        st.markdown(f"[Get Directions on Google Maps]({maps_link})")
-
+        if not active_df.empty:
+            active_df["distance_km"] = active_df.apply(
+                lambda row: haversine(user_lat, user_lon, row["lat"], row["lon"]),
+                axis=1,
+            )
+            nearest = active_df.loc[active_df["distance_km"].idxmin()]
+            st.success(f"Nearest shelter: **{nearest['name']}** ({nearest['distance_km']:.1f} km away)")
+            maps_link = f"https://www.google.com/maps/dir/{user_lat},{user_lon}/{nearest['lat']},{nearest['lon']}/"
+            st.markdown(f"[Get Directions on Google Maps]({maps_link})")
+        else:
+            st.warning("No shelters with available capacity meet your criteria.")
     else:
-        st.info("Please allow location access in your browser or your browser does not support geolocation.")
+        st.info("Please allow location access in your browser.")
 
 # --- Shelter Map ---
 with col2:
@@ -186,7 +185,8 @@ with col2:
     )
     m = folium.Map(location=midpoint, zoom_start=10, tiles="OpenStreetMap")
 
-    for _, row in filtered_df.iterrows():
+    #Add markers only for shelters with available capacity
+    for _, row in filtered_df[filtered_df["remaining_capacity"] > 0].iterrows():
         html_content = f"""
         <div style="width: 250px; font-family: Arial; line-height: 1.4; padding: 5px;">
             <b>{row['name']}</b><br>
