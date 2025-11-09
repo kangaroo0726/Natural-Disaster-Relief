@@ -165,7 +165,7 @@ col1, col2 = st.columns([2, 3])
 with col1:
     st.subheader("📋 Shelter List")
     st.data_editor(
-        filtered_df[["name", "address", "remaining_capacity", "food", "water"]],
+        filtered_df[["name", "address", "type", "remaining_capacity", "food", "water"]],
         use_container_width=True,
         hide_index=True,
         disabled=True
