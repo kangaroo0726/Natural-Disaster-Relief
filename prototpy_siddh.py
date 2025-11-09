@@ -32,10 +32,10 @@ def load_data():
                 "pet_friendly": (category == "pet_friendly")
             })
 
-    return pd.DataFrame(rows)
-
-
-
+    df = pd.DataFrame(rows)
+    df["remaining_capacity"] = df["capacity"] - df["current_occupancy"]
+    return df
+ 
 df = load_data()
 
 # --- Header ---
@@ -70,6 +70,7 @@ with col1:
             [
                 "name",
                 "address",
+                "remaining_capacity",
                 "food",
                 "water",
             ]
@@ -99,6 +100,7 @@ with col2:
                 f"Address: {row['address']}<br>"
                 f"Type: {row['type']}<br>"
                 f"Capacity: {row['capacity']}<br>"
+                f"Remaining Capacity: {row["remaining_capacity"]}"
                 f"Food: {'Yes' if row['food'] else 'No'}<br>"
                 f"Water: {'Yes' if row['water'] else 'No'}<br>"
                 f"Medical: {'Yes' if row['medical'] else 'No'}<br>"
@@ -111,4 +113,4 @@ with col2:
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Data Source: Local Shelter Dataset")
+st.caption("Data Source: Local Shelter Dataset") 
