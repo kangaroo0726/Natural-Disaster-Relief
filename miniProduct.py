@@ -67,7 +67,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 # --- Header ---
-st.title("🏠 County Shelter Access Portal")
+st.title("🏠 County Shelter Information Dashboard")
 st.markdown("View all open shelters, their locations, and available services.")
 
 
