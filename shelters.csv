@@ -7,7 +7,7 @@ John Hopkins Middle,Special Needs,"701 16th St S, St. Petersburg",27.7621,-82.65
 Lealman Exchange,Special Needs,"5175 45th St N, St. Petersburg",27.8231,-82.6936,100,0,True,True,True,False,100
 Palm Harbor University High - Building 19,Special Needs,"1900 Omaha St, Palm Harbor",28.0718,-82.7446,100,90,True,True,True,False,10
 Belleair Elementary,General Shelter,"1156 Lakeview Rd, Clearwater",27.9413,-82.7874,150,80,True,True,False,False,70
-Carwise Middle,General Shelter,"3301 Bently Dr, Palm Harbor",28.0818,-82.7272,200,200,True,True,False,False,0
+Carwise Middle,General Shelter,"3301 Bently Dr, Palm Harbor",28.0818,-82.7272,200,0,True,True,False,False,200
 Clearwater Fundamental Middle,General Shelter,"1660 Palmetto St, Clearwater",27.9695,-82.7695,180,117,True,True,False,False,63
 Clearwater High,General Shelter,"1951 Gulf to Bay Blvd, Clearwater",27.9603,-82.7528,250,88,True,True,False,False,162
 Dunedin Elementary,General Shelter,"900 Union St, Dunedin",28.0185,-82.7766,130,82,True,True,False,False,48
